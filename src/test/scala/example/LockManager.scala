@@ -47,6 +47,7 @@ class LockManager(self: Short,
 
   private val consensus: Runtime[ConsensusIO,_] = {
     if (Main.lv) new Runtime(new LastVoting, Main, defaultHandler(_))
+    else if (Main.ll) new Runtime(new LastVoting, Main, defaultHandler(_))
     else new Runtime(new OTR, Main, defaultHandler(_))
   }
 
@@ -329,7 +330,9 @@ object Main extends RTOptions {
   newOption("-ra", String( str => remoteAddress = str), "replica address")
 
   var lv = false
+  var ll = false
   newOption("-lv", Unit( () => lv = true), "use the last voting instead of the OTR")
+  newOption("-ll", Unit( () => ll = true), "use the leaderless consensus instead of the OTR")
 
   var confFile = "src/test/resources/sample-conf.xml"
 
