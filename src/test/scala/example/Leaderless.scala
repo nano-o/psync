@@ -31,8 +31,6 @@ class LLProcess extends Process[ConsensusIO]{
   //
   var callback: ConsensusIO = null
 
-  def coord: ProcessID = new ProcessID((r / 4 % n).toShort)
-
   def init(io: ConsensusIO) {
     callback = io
     x = io.initialValue
@@ -49,7 +47,7 @@ class LLProcess extends Process[ConsensusIO]{
     new Round[(Int,Time)]{
 
       def send(): Map[ProcessID,(Int, Time)] = {
-        Map(coord -> (x, ts))
+        broadcast(x, ts)
       }
 
       override def expectedNbrMessages = { // if this happens before timeout, increment round
