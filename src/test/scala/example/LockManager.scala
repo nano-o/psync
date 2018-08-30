@@ -47,7 +47,7 @@ class LockManager(self: Short,
 
   private val consensus: Runtime[ConsensusIO,_] = {
     if (Main.lv) new Runtime(new LastVoting, Main, defaultHandler(_))
-    else if (Main.ll) new Runtime(new LastVoting, Main, defaultHandler(_))
+    else if (Main.ll) new Runtime(new Leaderless, Main, defaultHandler(_))
     else new Runtime(new OTR, Main, defaultHandler(_))
   }
 
@@ -145,7 +145,7 @@ class LockManager(self: Short,
   // setup, shutdown, ... //
   //////////////////////////
 
-  def defaultHandler(msg: Message) = {
+  def defaultHandler(msg: Message) = { // called when not started on this replica
     Logger("LockManager", Debug, "defaultHandler: " + msg.tag)
 
     if (msg.flag == Decision) {
@@ -154,7 +154,7 @@ class LockManager(self: Short,
 
       //get the initial value from the msg (to avoid defaulting on -1)
       val content: Int = {
-        if (Main.lv) {
+        if (Main.lv || Main.ll) {
           msg.round % 4 match {
             case 0 => msg.getContent[(Int,Time)](kryo.get)._1
             case 1 | 2 | 3 => msg.getContent[Int](kryo.get)
@@ -205,7 +205,7 @@ class LockManager(self: Short,
       val message = if (success) "SUCCESS" else "FAILED"
       val pck = new DatagramPacket(Unpooled.copiedBuffer(message, CharsetUtil.UTF_8), address)
       clientChannel.writeAndFlush(pck).sync()
-      Logger("LockManager", Notice, "reply to " + success + " to client " + address)
+      Logger("LockManager", Notice, "replied " + success + " to client " + address)
     }
   }
 
@@ -278,7 +278,7 @@ class LockManagerClient(myPort: Int, remote: (String, Int)) {
     //in Netty version 5.0 will be called: channelRead0 will be messageReceived
     override def channelRead0(ctx: ChannelHandlerContext, pkt: DatagramPacket) {
       val reply = pkt.content().toString(CharsetUtil.UTF_8).toLowerCase
-      Logger("LockManagerClient", Notice, "request: " + reply)
+      Logger("LockManagerClient", Notice, "reply: " + reply)
       if (reply == "success") {
         critical = !critical
       }
